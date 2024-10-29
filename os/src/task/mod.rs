@@ -178,6 +178,12 @@ impl TaskManager {
         let current = inner.current_task;
         inner.tasks[current].memory_set.mmap(start, end, permission)
     }
+
+    fn munmap(&self, start: VirtAddr, end: VirtAddr) -> isize {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.munmap(start, end)
+    }
 }
 
 /// Run the first task in task list.
@@ -238,6 +244,11 @@ pub fn current_task_info() -> (TaskStatus, [u32; MAX_SYSCALL_NUM], usize) {
 }
 
 ///doc
-pub fn mmap(start: VirtAddr, end: VirtAddr , permission: MapPermission) -> isize {
+pub fn mmap(start: VirtAddr, end: VirtAddr, permission: MapPermission) -> isize {
     TASK_MANAGER.mmap(start, end, permission)
+}
+
+///doc
+pub fn munmap(start: VirtAddr, end: VirtAddr) -> isize {
+    TASK_MANAGER.munmap(start, end)
 }
