@@ -86,6 +86,9 @@ pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
 // YOUR JOB: Implement munmap.
 pub fn sys_munmap(start: usize, len: usize) -> isize {
     trace!("kernel: sys_munmap");
+    if (!VirtAddr::aligned(&start.into())) && (!VirtAddr::aligned(&(start + len).into())){
+        return -1;
+    }
     munmap(start.into(), (start + len).into())
 }
 /// change data segment size
