@@ -2,7 +2,7 @@
 use core::mem::size_of;
 
 use crate::{
-    config::MAX_SYSCALL_NUM, mm::{translated_byte_buffer, MapPermission, VirtAddr}, task::{
+    config::{MAX_SYSCALL_NUM, PAGE_SIZE}, mm::{translated_byte_buffer, MapPermission}, task::{
         change_program_brk, current_user_token, exit_current_and_run_next, mmap, munmap, suspend_current_and_run_next, TaskStatus
     }, timer::{get_time_ms, get_time_us}
 };
@@ -75,7 +75,7 @@ pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
 // YOUR JOB: Implement mmap.
 pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
     trace!("kernel: sys_mmap");
-    if (!VirtAddr::aligned(&start.into())) && (port & !0x7 != 0) && (port & 0x7 == 0){
+    if (start % PAGE_SIZE != 0) || (port & !0x7 != 0) || (port & 0x7 == 0){
         return -1;
     }
     let perm = MapPermission::from_bits((port as u8) << 1).unwrap() | MapPermission::U;
@@ -86,7 +86,7 @@ pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
 // YOUR JOB: Implement munmap.
 pub fn sys_munmap(start: usize, len: usize) -> isize {
     trace!("kernel: sys_munmap");
-    if (!VirtAddr::aligned(&start.into())) && (!VirtAddr::aligned(&(start + len).into())){
+    if start % PAGE_SIZE != 0 || len % PAGE_SIZE != 0 {
         return -1;
     }
     munmap(start.into(), (start + len).into())

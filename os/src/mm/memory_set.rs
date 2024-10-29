@@ -70,9 +70,8 @@ impl MemorySet {
         if let Some(area) = mapped {
             self.areas[area].unmap(&mut self.page_table);
             self.areas.remove(area);
-            return 0;
         }
-        -1
+        0
     }
     /// Assume that no conflicts.
     pub fn insert_framed_area(
