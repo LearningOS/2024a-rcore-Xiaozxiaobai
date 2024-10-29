@@ -51,6 +51,17 @@ impl MemorySet {
     pub fn token(&self) -> usize {
         self.page_table.token()
     }
+    /// mmap
+    pub fn mmap(&mut self, start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission) -> isize{
+        let remap = self.areas.iter().any(|area| {
+            area.vpn_range.get_end() > start_va.floor() && area.vpn_range.get_start() < end_va.ceil()
+        });
+        if remap {
+            return -1;
+        }
+        self.insert_framed_area(start_va, end_va, permission);
+        0
+    }
     /// Assume that no conflicts.
     pub fn insert_framed_area(
         &mut self,

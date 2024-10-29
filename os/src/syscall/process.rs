@@ -2,8 +2,8 @@
 use core::mem::size_of;
 
 use crate::{
-    config::MAX_SYSCALL_NUM, mm::translated_byte_buffer, task::{
-        change_program_brk, current_user_token, exit_current_and_run_next, suspend_current_and_run_next, TaskStatus
+    config::MAX_SYSCALL_NUM, mm::{translated_byte_buffer, MapPermission, VirtAddr}, task::{
+        change_program_brk, current_user_token, exit_current_and_run_next, mmap, suspend_current_and_run_next, TaskStatus
     }, timer::{get_time_ms, get_time_us}
 };
 
@@ -47,7 +47,7 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
     let us = get_time_us();
     let mut phys = 
         translated_byte_buffer(current_user_token(), ts as *const u8, size_of::<TimeVal>());
-    let time = phys.as_mut_ptr() as *mut TimeVal;
+    let time = phys[0].as_mut_ptr() as *mut TimeVal;
     unsafe {
         (*time).sec = us / 1_000_000;
         (*time).usec = us % 1_000_000;
@@ -63,7 +63,7 @@ pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
     let (status, syscall, time) = crate::task::current_task_info();
     let mut phys = 
         translated_byte_buffer(current_user_token(), ti as *const u8, size_of::<TaskInfo>());
-    let task = phys.as_mut_ptr() as *mut TaskInfo;
+    let task = phys[0].as_mut_ptr() as *mut TaskInfo;
     unsafe {
         (*task).status = status;
         (*task).syscall_times = syscall;
@@ -73,9 +73,14 @@ pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
 }
 
 // YOUR JOB: Implement mmap.
-pub fn sys_mmap(_start: usize, _len: usize, _port: usize) -> isize {
-    trace!("kernel: sys_mmap NOT IMPLEMENTED YET!");
-    -1
+pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
+    trace!("kernel: sys_mmap");
+    if (!VirtAddr::aligned(&start.into())) && (port & !0x7 != 0) && (port & 0x7 == 0){
+        return -1;
+    }
+    let perm = MapPermission::from_bits((port as u8) << 1).unwrap() | MapPermission::U;
+    mmap(start.into(), (start + len).into(), perm)
+    
 }
 
 // YOUR JOB: Implement munmap.
