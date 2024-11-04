@@ -210,9 +210,9 @@ impl TaskControlBlock {
                     exit_code: 0,
                     heap_bottom: parent_inner.heap_bottom,
                     program_brk: parent_inner.program_brk,
-                    syscall_times: parent_inner.syscall_times.clone(),
-                    start_time: parent_inner.start_time,
-                    scheduled: parent_inner.scheduled
+                    syscall_times: [0; MAX_SYSCALL_NUM],
+                    start_time: 0,
+                    scheduled: false
                 })
             },
         });
@@ -258,7 +258,7 @@ impl TaskControlBlock {
             None
         }
     }
-
+    
     ///doc
     pub fn add_syscall_times(&self, syscall_id: usize) {
         let mut inner = self.inner.exclusive_access();
