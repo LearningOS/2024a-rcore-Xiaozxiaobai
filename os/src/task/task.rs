@@ -77,7 +77,13 @@ pub struct TaskControlBlockInner {
     pub start_time: usize,
 
     /// Whether the task has already been dispatched
-    pub scheduled: bool
+    pub scheduled: bool,
+
+    /// priority
+    pub priority: isize,
+
+    /// stride
+    pub stride: usize,
 }
 
 impl TaskControlBlockInner {
@@ -136,7 +142,9 @@ impl TaskControlBlock {
                     program_brk: user_sp,
                     syscall_times: [0; MAX_SYSCALL_NUM],
                     start_time: 0,
-                    scheduled: false
+                    scheduled: false,
+                    priority: 0,
+                    stride: 0,
                 })
             },
         };
@@ -212,7 +220,9 @@ impl TaskControlBlock {
                     program_brk: parent_inner.program_brk,
                     syscall_times: [0; MAX_SYSCALL_NUM],
                     start_time: 0,
-                    scheduled: false
+                    scheduled: false,
+                    priority: parent_inner.priority,
+                    stride: parent_inner.stride,
                 })
             },
         });
@@ -258,7 +268,7 @@ impl TaskControlBlock {
             None
         }
     }
-    
+
     ///doc
     pub fn add_syscall_times(&self, syscall_id: usize) {
         let mut inner = self.inner.exclusive_access();
@@ -290,6 +300,16 @@ impl TaskControlBlock {
         let mut inner = self.inner.exclusive_access();
         let memset = &mut inner.memory_set;
         memset.unmap(start, end)
+    }
+    ///doc
+    pub fn spawn(&self, elf_data: &[u8]) -> Arc<Self> {
+        let tcb = Arc::from(TaskControlBlock::new(elf_data));
+        self.inner_exclusive_access().children.push(tcb.clone());
+        tcb
+    }
+    /// Set priority
+    pub fn set_priority(&self, prio: isize) {
+        self.inner_exclusive_access().priority = prio;
     }
 }
 

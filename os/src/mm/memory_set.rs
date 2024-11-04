@@ -324,10 +324,6 @@ impl MemorySet {
             self.areas.remove(index);
         }
         0
-        // self.areas.retain(|map| {
-        //     !(map.vpn_range.get_start() == start.floor() && map.vpn_range.get_end() == end.ceil())
-        // });
-        // 0
     }
 
 }
