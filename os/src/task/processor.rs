@@ -62,6 +62,7 @@ pub fn run_tasks() {
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
             // release coming task_inner manually
+            task_inner.set_time_on_first_schedule();
             drop(task_inner);
             // release coming task TCB manually
             processor.current = Some(task);
