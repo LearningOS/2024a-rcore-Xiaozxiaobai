@@ -4,6 +4,7 @@ use super::ProcessControlBlock;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE, USER_STACK_SIZE};
 use crate::mm::{MapPermission, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::sync::UPSafeCell;
+use alloc::vec;
 use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
@@ -134,6 +135,14 @@ pub struct TaskUserRes {
     pub ustack_base: usize,
     /// process belongs to
     pub process: Weak<ProcessControlBlock>,
+    /// Mutex for task own
+    pub mutex_own: Vec<i32>,
+    /// Mutex for task requie
+    pub mutex_require: Vec<i32>,
+    /// Semaphore for task own
+    pub semaphore_own: Vec<i32>,
+    /// Semaphore for task require
+    pub semaphore_require: Vec<i32>,
 }
 /// Return the bottom addr (low addr) of the trap context for a task
 fn trap_cx_bottom_from_tid(tid: usize) -> usize {
@@ -152,10 +161,16 @@ impl TaskUserRes {
         alloc_user_res: bool,
     ) -> Self {
         let tid = process.inner_exclusive_access().alloc_tid();
+        let mutex_len = process.inner_exclusive_access().mutex_list.len() as usize;
+        let semaphore_len = process.inner_exclusive_access().semaphore_list.len() as usize;
         let task_user_res = Self {
             tid,
             ustack_base,
             process: Arc::downgrade(&process),
+            mutex_own: vec![0; mutex_len],
+            mutex_require: vec![0; mutex_len],
+            semaphore_own: vec![0; semaphore_len],
+            semaphore_require: vec![0; semaphore_len],
         };
         if alloc_user_res {
             task_user_res.alloc_user_res();
